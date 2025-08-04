@@ -6,7 +6,29 @@ This document outlines a cost-effective and scalable server-side architecture fo
 2.  **Bootstrapped Economics**: Services are chosen to minimize upfront costs and scale predictably with revenue.
 3.  **Operational Simplicity**: Leverage managed services and serverless functions where possible.
 
-## I. High-Level Architecture Diagram
+## II. Development Phases
+
+This document outlines the desired end-state architecture for Chitchatter Pro. However, development will be executed in iterative phases.
+
+### Phase 1: Minimum Viable Product (MVP)
+
+The primary goal of the MVP is to deliver the core value proposition of a secure, private, and easy-to-use communication tool. The feature set will be limited to what is essential for this purpose.
+
+-   **Core Technology:** Peer-to-peer (P2P) connections for all communication, including data, audio, and video.
+-   **Fallback Mechanism:** A managed Cloudflare TURN service will be used as a relay to ensure connectivity when direct P2P connections fail.
+-   **Authentication:** AWS Cognito for user sign-up, login, and management.
+-   **Bookkeeping:** Turso database for managing user accounts and subscriptions.
+-   **Signaling:** Firebase Realtime Database for WebRTC signaling (via Trystero).
+-   **Hosting:** Vercel for the frontend application and backend logic.
+
+### Phase 2: Post-MVP Enhancements
+
+Following a successful MVP launch, subsequent phases will focus on enhancing the service with features that support larger groups and more advanced use cases. These features will be introduced as part of the pay-as-you-go offerings.
+
+-   **Scalable A/V for Larger Groups:** Integration with the **AWS Chime SDK** to provide a Selective Forwarding Unit (SFU). This will allow for high-quality audio and video calls with a larger number of participants than is feasible with P2P connections.
+-   **Managed File Sharing:** Integration with **AWS S3** for reliable, managed file transfers. This overcomes the limitations of P2P file sharing, such as the requirement for both users to be online simultaneously.
+
+## III. High-Level Architecture Diagram
 
 ```mermaid
 graph TD
@@ -41,10 +63,10 @@ graph TD
 
     subgraph "AWS"
         H[Cognito - Auth & User Management]
-        P[Chime SDK - Video/Audio]
-        Q[S3 - File Sharing]
-        R[Lambda for Usage Reporting]
-        S[Cost & Usage Reports]
+        P["Chime SDK - Video/Audio (Post-MVP)"]
+        Q["S3 - File Sharing (Post-MVP)"]
+        R["Lambda for Usage Reporting (Post-MVP)"]
+        S["Cost & Usage Reports (Post-MVP)"]
     end
 
     A -- "Loads Admin UI" --> C
@@ -60,23 +82,23 @@ graph TD
     E -- "Manages User Data" --> I
     E -- "Handles Payments" --> K
     E -- "Gets TURN Credentials" --> O
-    E -- "Manages Chime Sessions" --> P
-    E -- "Generates S3 URLs" --> Q
+    E -- "Manages Chime Sessions (Post-MVP)" --> P
+    E -- "Generates S3 URLs (Post-MVP)" --> Q
 
     B -- "WebRTC Signaling" --> J
     B -- "WebRTC Connection (DataChannel Fallback)" --> O
-    B -- "A/V Streams" --> P
-    B -- "File Transfers" --> Q
+    B -- "A/V Streams (Post-MVP)" --> P
+    B -- "File Transfers (Post-MVP)" --> Q
 
     K -- "Webhooks" --> E
 
     F -- "Manages DNS" --> G
     G -- "Points to" --> D
 
-    P -- "Usage Data" --> S
-    Q -- "Usage Data" --> S
-    S -- "Triggers" --> R
-    R -- "Updates Quotas" --> I
+    P -- "Usage Data (Post-MVP)" --> S
+    Q -- "Usage Data (Post-MVP)" --> S
+    S -- "Triggers (Post-MVP)" --> R
+    R -- "Updates Quotas (Post-MVP)" --> I
 
     style A fill:#D6EAF8,stroke:#333,stroke-width:2px,color:#333
     style B fill:#D6EAF8,stroke:#333,stroke-width:2px,color:#333
@@ -96,7 +118,7 @@ graph TD
     style S fill:#FF9900,stroke:#333,stroke-width:2px,color:#333
 ```
 
-## II. Service Breakdown & Rationale
+## IV. Service Breakdown & Rationale
 
 ### 1\. **Authentication & User Management: AWS Cognito**
 
@@ -129,19 +151,20 @@ graph TD
 
 ### 6\. **Pay-as-you-go Features & Payments: AWS, Stripe**
 
-- **AWS Chime SDK & S3**: Manages all real-time audio/video sessions and file transfers, respectively. The Chitchatter client will get temporary credentials from our backend to interact directly with these services.
 - **Stripe**: Manages all payment processing and subscriptions.
+- **AWS Chime SDK & S3 (Post-MVP)**: These services will manage real-time audio/video sessions and file transfers, respectively. They form the core of the pay-as-you-go offerings planned for after the initial MVP launch. The Chitchatter client will get temporary credentials from our backend to interact directly with these services.
 
-## III. Integration Flow
+## V. Integration Flow
 
 1.  A user signs up on `pro.chitchatter.im` using an authentication flow powered by **AWS Cognito**.
 2.  Upon successful sign-up and payment via **Stripe**, a webhook is sent to a dedicated **Vercel Edge Function**.
 3.  This function validates the webhook, generates a unique `instanceId`, and creates a new user record in the **Turso** database, initializing their usage quotas.
-4.  When a user on a Pro instance (e.g., `abc123.chitchatter.im`) needs to use a managed service (like DataChannel Relay or A/V), the client calls a dedicated API endpoint on a **Vercel Edge Function** to request credentials.
-5.  The function validates the user's **Cognito** session. It then queries the **Turso** database to check their subscription status and their **current usage quota** for the requested service (e.g., Chime participant minutes or file storage).
-6.  **If the quota has not been exceeded**, the backend calls the appropriate service API (**Cloudflare TURN**, **AWS Chime**, or **AWS S3**) to generate and return temporary, short-lived credentials to the client. If the quota _has_ been exceeded, it returns an error, allowing the client to fall back to P2P-only mode or display a relevant message to the user.
+4.  **MVP:** When a user's P2P connection needs a relay, the client calls a **Vercel Edge Function** to request credentials for the **Cloudflare TURN service**.
+5.  **Post-MVP:** When a user on a Pro instance needs to use a pay-as-you-go managed service (like the Chime SFU or S3 file sharing), the client will call a dedicated API endpoint on a **Vercel Edge Function** to request credentials.
+6.  The function validates the user's **Cognito** session and queries the **Turso** database to check their subscription status and current usage quota for the requested service.
+7.  **If the quota has not been exceeded**, the backend calls the appropriate service API (**Cloudflare TURN**, **AWS Chime**, or **AWS S3**) to generate and return temporary, short-lived credentials to the client. If the quota _has_ been exceeded, it returns an error, allowing the client to fall back to P2P-only mode or display a relevant message to the user.
 
-## IV. Architectural Decision: Multi-Tenant vs. Single-Tenant
+## VI. Architectural Decision: Multi-Tenant vs. Single-Tenant
 
 A key decision in this architecture is the use of a **multi-tenant** (shared infrastructure) model rather than a **single-tenant** (dedicated infrastructure per customer) model.
 
@@ -157,9 +180,11 @@ The multi-tenant approach was chosen for the primary "Core" offering for two cri
 
 While a single-tenant model offers greater isolation, it is not sensible for our primary market. However, the concept is strategically valuable and can be reserved for a future, high-priced **"Enterprise" tier**, where the high price would justify the cost and complexity of providing dedicated, isolated infrastructure.
 
-## V. AWS Chime SDK Integration Deep Dive
+## VII. Post-MVP: AWS Chime SDK Integration Deep Dive
 
-For Chitchatter Pro, audio and video streams will be routed through an **SFU (Selective Forwarding Unit)** provided by the AWS Chime SDK, rather than relying on direct P2P connections. This provides a more robust and reliable experience for multi-party calls.
+> **Note:** This feature is planned for a post-MVP release.
+
+For Chitchatter Pro, audio and video streams for larger calls will be routed through an **SFU (Selective Forwarding Unit)** provided by the AWS Chime SDK, rather than relying on direct P2P connections. This provides a more robust and reliable experience for multi-party calls.
 
 ### The Role of an SFU
 
@@ -205,11 +230,11 @@ sequenceDiagram
 5.  **Client Connects to SFU:** The client passes the received `Meeting` and `Attendee` objects to the **Amazon Chime JS SDK**. The SDK handles all the complex WebRTC logic, connecting the user to the AWS SFU and providing simple event handlers to manage video streams in the UI.
 6.  **Subsequent Users:** When other users join the call, the backend finds the existing `MeetingId` in Turso and simply creates a new `Attendee` for that meeting, ensuring everyone connects to the same SFU session.
 
-## VI. Usage Tracking and Abuse Prevention
+## VIII. Usage Tracking and Abuse Prevention
 
 A critical component of this architecture is the ability to track usage for each customer to enforce plan limits and prevent resource abuse.
 
-### 1\. Cloudflare TURN Service (DataChannel Relay)
+### 1\. Cloudflare TURN Service (DataChannel Relay) - MVP
 
 - **Measurement Strategy:** Use a **proxy metric** of credential allocations.
 - **Implementation:** Since direct bandwidth measurement isn't available on the managed service, we will track the _number_ of times we issue a TURN credential to a customer.
@@ -218,7 +243,7 @@ A critical component of this architecture is the ability to track usage for each
   - Before issuing a new credential, the backend first checks if `turn_allocations_used` is below the plan limit (e.g., 500 allocations/month).
 - **Why this works:** The combination of very low-bandwidth traffic (DataChannel only) and short-lived credentials (10-minute TTL) makes this a safe and effective way to prevent a single user from constantly consuming relay resources.
 
-### 2\. AWS Chime SDK (SFU for A/V)
+### 2\. AWS Chime SDK (SFU for A/V) - Post-MVP
 
 - **Measurement Strategy:** Use **cost allocation tagging** and periodic reporting.
 - **Implementation:** This provides much more precise usage data.
@@ -231,7 +256,7 @@ A critical component of this architecture is the ability to track usage for each
       - Update a `chime_minutes_used` field for each corresponding user in our Turso database.
 - **Enforcement:** With a near-real-time view of each customer's Chime usage in Turso, the backend can accurately check against their "pay-as-you-go" limits before creating a new meeting or allowing a new attendee to join. This provides a robust and scalable system for managing our largest variable cost.
 
-### 3\. AWS S3 (File Sharing)
+### 3\. AWS S3 (File Sharing) - Post-MVP
 
 - **Measurement Strategy:** Use **cost allocation tagging** and periodic reporting, identical to the Chime strategy.
 - **Implementation:**
@@ -239,9 +264,11 @@ A critical component of this architecture is the ability to track usage for each
   2.  **Reporting & Processing:** The same Lambda function that processes Chime usage will also look for S3 data storage and transfer line items, aggregating them by the customer ID tag.
   3.  **Enforcement:** It will update a `storage_gb_used` field in Turso, allowing the backend to deny requests for new upload URLs if the customer has exceeded their storage quota.
 
-## VII. Managed File Sharing via AWS S3
+## IX. Post-MVP: Managed File Sharing via AWS S3
 
-The Pro plan enhances file sharing by using AWS S3 as a temporary, reliable storage backend, while maintaining the core principles of end-to-end encryption and ephemerality.
+> **Note:** This feature is planned for a post-MVP release.
+
+The Pro plan will enhance file sharing by using AWS S3 as a temporary, reliable storage backend, while maintaining the core principles of end-to-end encryption and ephemerality.
 
 ### File Sharing Flow
 
