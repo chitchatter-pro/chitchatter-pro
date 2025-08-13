@@ -163,6 +163,7 @@ graph TD
 5. **Post-MVP:** When a user on a Pro instance needs to use a pay-as-you-go managed service (like the Chime SFU or S3 file sharing), the client will call a dedicated API endpoint on a **Vercel Edge Function** to request credentials.
 6. The function validates the user's **Cognito** session and queries the **Turso** database to check their subscription status and current usage quota for the requested service.
 7. **If the quota has not been exceeded**, the backend calls the appropriate service API (**Cloudflare TURN**, **AWS Chime**, or **AWS S3**) to generate and return temporary, short-lived credentials to the client. If the quota _has_ been exceeded, it returns an error, allowing the client to fall back to P2P-only mode or display a relevant message to the user.
+   a. As a post-MVP enhancement, customers will have the option to set a customized budget for overage bandwidth.
 
 ## VI. Architectural Decision: Multi-Tenant vs. Single-Tenant
 
