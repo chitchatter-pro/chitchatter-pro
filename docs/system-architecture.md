@@ -25,7 +25,7 @@ The primary goal of the MVP is to deliver the core value proposition of a secure
 
 Following a successful MVP launch, subsequent phases will focus on enhancing the service with features that support larger groups and more advanced use cases. These features will be introduced as part of the pay-as-you-go offerings.
 
-- **Scalable A/V for Larger Groups:** Integration with the **AWS Chime SDK** to provide a Selective Forwarding Unit (SFU). This will allow for high-quality audio and video calls with a larger number of participants than is feasible with P2P connections.
+- **Scalable A/V for Larger Groups:** Integration with the **AWS Chime SDK** to provide a Selective Forwarding Unit (SFU). This will allow for high-quality audio and video calls with a larger number of participants than is feasible with P2P connections (up to 15 initially).
 - **Managed File Sharing:** Integration with **AWS S3** for reliable, managed file transfers. This overcomes the limitations of P2P file sharing, such as the requirement for both users to be online simultaneously.
 
 ## III. High-Level Architecture Diagram
@@ -222,10 +222,10 @@ sequenceDiagram
 1. **User Initiates Call:** A user in a Pro room clicks the "Start Video" button.
 2. **API Request to Backend:** The client makes a request to a dedicated API endpoint (e.g., `POST /api/join-meeting`).
 3. **Vercel Edge Function Logic:**
-    - The function validates the user's Cognito session and checks their subscription status and A/V quota in Turso.
-    - It queries Turso to see if there is already an _active_ Chime `MeetingID` for this room.
-    - **If no meeting exists:** It uses the AWS SDK to call Chime's `CreateMeeting` function. AWS returns a `Meeting` object, and the backend saves the new `MeetingId` in Turso, associated with the current room.
-    - **The function then calls Chime's `CreateAttendee` function**, passing in the `MeetingId`. AWS returns an `Attendee` object containing a secret `JoinToken`.
+   - The function validates the user's Cognito session and checks their subscription status and A/V quota in Turso.
+   - It queries Turso to see if there is already an _active_ Chime `MeetingID` for this room.
+   - **If no meeting exists:** It uses the AWS SDK to call Chime's `CreateMeeting` function. AWS returns a `Meeting` object, and the backend saves the new `MeetingId` in Turso, associated with the current room.
+   - **The function then calls Chime's `CreateAttendee` function**, passing in the `MeetingId`. AWS returns an `Attendee` object containing a secret `JoinToken`.
 4. **Client Receives Credentials:** The Edge Function returns the `Meeting` and `Attendee` objects to the client.
 5. **Client Connects to SFU:** The client passes the received `Meeting` and `Attendee` objects to the **Amazon Chime JS SDK**. The SDK handles all the complex WebRTC logic, connecting the user to the AWS SFU and providing simple event handlers to manage video streams in the UI.
 6. **Subsequent Users:** When other users join the call, the backend finds the existing `MeetingId` in Turso and simply creates a new `Attendee` for that meeting, ensuring everyone connects to the same SFU session.
@@ -250,10 +250,10 @@ A critical component of this architecture is the ability to track usage for each
   1. **Tagging:** When the Vercel backend calls the `CreateMeeting` function in the Chime SDK, it will add a unique tag to the meeting, such as `chitchatter-customer-id:<user_id_from_cognito>`.
   2. **Reporting:** In AWS, we will enable **Cost and Usage Reports (CUR)**. These reports are delivered to an S3 bucket and contain detailed line items of all AWS usage, including the tags we applied.
   3. **Processing:** An **AWS Lambda function** will be configured to trigger periodically (e.g., once every hour). This Lambda function will:
-      - Read the latest CUR data from the S3 bucket.
-      - Parse the data, looking for Chime usage line items.
-      - Aggregate the total participant-minutes for each `chitchatter-customer-id` tag.
-      - Update a `chime_minutes_used` field for each corresponding user in our Turso database.
+     - Read the latest CUR data from the S3 bucket.
+     - Parse the data, looking for Chime usage line items.
+     - Aggregate the total participant-minutes for each `chitchatter-customer-id` tag.
+     - Update a `chime_minutes_used` field for each corresponding user in our Turso database.
 - **Enforcement:** With a near-real-time view of each customer's Chime usage in Turso, the backend can accurately check against their "pay-as-you-go" limits before creating a new meeting or allowing a new attendee to join. This provides a robust and scalable system for managing our largest variable cost.
 
 ### 3\. AWS S3 (File Sharing) - Post-MVP
