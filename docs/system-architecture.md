@@ -2,31 +2,31 @@
 
 This document outlines a cost-effective and scalable server-side architecture for Chitchatter Pro. The core principles are:
 
-1.  **Zero User-Content Storage**: The server will never see or store the content of user communications.
-2.  **Bootstrapped Economics**: Services are chosen to minimize upfront costs and scale predictably with revenue.
-3.  **Operational Simplicity**: Leverage managed services and serverless functions where possible.
+1. **Zero User-Content Storage**: The server will never see or store the content of user communications.
+2. **Bootstrapped Economics**: Services are chosen to minimize upfront costs and scale predictably with revenue.
+3. **Operational Simplicity**: Leverage managed services and serverless functions where possible.
 
 ## II. Development Phases
 
-This document outlines the desired end-state architecture for Chitchatter Pro. However, development will be executed in iterative phases.
+This document outlines the desired architecture for Chitchatter Pro. However, development will be executed in iterative phases.
 
 ### Phase 1: Minimum Viable Product (MVP)
 
 The primary goal of the MVP is to deliver the core value proposition of a secure, private, and easy-to-use communication tool. The feature set will be limited to what is essential for this purpose.
 
--   **Core Technology:** Peer-to-peer (P2P) connections for all communication, including data, audio, and video.
--   **Fallback Mechanism:** A managed Cloudflare TURN service will be used as a relay to ensure connectivity when direct P2P connections fail.
--   **Authentication:** AWS Cognito for user sign-up, login, and management.
--   **Bookkeeping:** Turso database for managing user accounts and subscriptions.
--   **Signaling:** Firebase Realtime Database for WebRTC signaling (via Trystero).
--   **Hosting:** Vercel for the frontend application and backend logic.
+- **Core Technology:** Peer-to-peer (P2P) connections for all communication, including data, audio, and video.
+- **Fallback Mechanism:** A managed Cloudflare TURN service will be used as a relay to ensure connectivity when direct P2P connections fail.
+- **Authentication:** AWS Cognito for user sign-up, login, and management.
+- **Bookkeeping:** Turso database for managing user accounts and subscriptions.
+- **Signaling:** Firebase Realtime Database for WebRTC signaling (via Trystero).
+- **Hosting:** Vercel for the frontend application and backend logic.
 
 ### Phase 2: Post-MVP Enhancements
 
 Following a successful MVP launch, subsequent phases will focus on enhancing the service with features that support larger groups and more advanced use cases. These features will be introduced as part of the pay-as-you-go offerings.
 
--   **Scalable A/V for Larger Groups:** Integration with the **AWS Chime SDK** to provide a Selective Forwarding Unit (SFU). This will allow for high-quality audio and video calls with a larger number of participants than is feasible with P2P connections.
--   **Managed File Sharing:** Integration with **AWS S3** for reliable, managed file transfers. This overcomes the limitations of P2P file sharing, such as the requirement for both users to be online simultaneously.
+- **Scalable A/V for Larger Groups:** Integration with the **AWS Chime SDK** to provide a Selective Forwarding Unit (SFU). This will allow for high-quality audio and video calls with a larger number of participants than is feasible with P2P connections.
+- **Managed File Sharing:** Integration with **AWS S3** for reliable, managed file transfers. This overcomes the limitations of P2P file sharing, such as the requirement for both users to be online simultaneously.
 
 ## III. High-Level Architecture Diagram
 
@@ -156,13 +156,13 @@ graph TD
 
 ## V. Integration Flow
 
-1.  A user signs up on `pro.chitchatter.im` using an authentication flow powered by **AWS Cognito**.
-2.  Upon successful sign-up and payment via **Stripe**, a webhook is sent to a dedicated **Vercel Edge Function**.
-3.  This function validates the webhook, generates a unique `instanceId`, and creates a new user record in the **Turso** database, initializing their usage quotas.
-4.  **MVP:** When a user's P2P connection needs a relay, the client calls a **Vercel Edge Function** to request credentials for the **Cloudflare TURN service**.
-5.  **Post-MVP:** When a user on a Pro instance needs to use a pay-as-you-go managed service (like the Chime SFU or S3 file sharing), the client will call a dedicated API endpoint on a **Vercel Edge Function** to request credentials.
-6.  The function validates the user's **Cognito** session and queries the **Turso** database to check their subscription status and current usage quota for the requested service.
-7.  **If the quota has not been exceeded**, the backend calls the appropriate service API (**Cloudflare TURN**, **AWS Chime**, or **AWS S3**) to generate and return temporary, short-lived credentials to the client. If the quota _has_ been exceeded, it returns an error, allowing the client to fall back to P2P-only mode or display a relevant message to the user.
+1. A user signs up on `pro.chitchatter.im` using an authentication flow powered by **AWS Cognito**.
+2. Upon successful sign-up and payment via **Stripe**, a webhook is sent to a dedicated **Vercel Edge Function**.
+3. This function validates the webhook, generates a unique `instanceId`, and creates a new user record in the **Turso** database, initializing their usage quotas.
+4. **MVP:** When a user's P2P connection needs a relay, the client calls a **Vercel Edge Function** to request credentials for the **Cloudflare TURN service**.
+5. **Post-MVP:** When a user on a Pro instance needs to use a pay-as-you-go managed service (like the Chime SFU or S3 file sharing), the client will call a dedicated API endpoint on a **Vercel Edge Function** to request credentials.
+6. The function validates the user's **Cognito** session and queries the **Turso** database to check their subscription status and current usage quota for the requested service.
+7. **If the quota has not been exceeded**, the backend calls the appropriate service API (**Cloudflare TURN**, **AWS Chime**, or **AWS S3**) to generate and return temporary, short-lived credentials to the client. If the quota _has_ been exceeded, it returns an error, allowing the client to fall back to P2P-only mode or display a relevant message to the user.
 
 ## VI. Architectural Decision: Multi-Tenant vs. Single-Tenant
 
@@ -175,8 +175,8 @@ A key decision in this architecture is the use of a **multi-tenant** (shared inf
 
 The multi-tenant approach was chosen for the primary "Core" offering for two critical reasons:
 
-1.  **Cost-Effectiveness:** The fixed costs of the infrastructure are extremely low, as we are leveraging managed services with generous free tiers. This allows us to offer the service at a low price point and remain profitable.
-2.  **Operational Simplicity:** Managing, patching, and monitoring a single, shared pool of resources is significantly simpler than managing a separate fleet of infrastructure for every individual customer. This simplicity is vital for focusing engineering efforts on the core product.
+1. **Cost-Effectiveness:** The fixed costs of the infrastructure are extremely low, as we are leveraging managed services with generous free tiers. This allows us to offer the service at a low price point and remain profitable.
+2. **Operational Simplicity:** Managing, patching, and monitoring a single, shared pool of resources is significantly simpler than managing a separate fleet of infrastructure for every individual customer. This simplicity is vital for focusing engineering efforts on the core product.
 
 While a single-tenant model offers greater isolation, it is not sensible for our primary market. However, the concept is strategically valuable and can be reserved for a future, high-priced **"Enterprise" tier**, where the high price would justify the cost and complexity of providing dedicated, isolated infrastructure.
 
@@ -219,16 +219,16 @@ sequenceDiagram
 
 **Step-by-step Breakdown:**
 
-1.  **User Initiates Call:** A user in a Pro room clicks the "Start Video" button.
-2.  **API Request to Backend:** The client makes a request to a dedicated API endpoint (e.g., `POST /api/join-meeting`).
-3.  **Vercel Edge Function Logic:**
+1. **User Initiates Call:** A user in a Pro room clicks the "Start Video" button.
+2. **API Request to Backend:** The client makes a request to a dedicated API endpoint (e.g., `POST /api/join-meeting`).
+3. **Vercel Edge Function Logic:**
     - The function validates the user's Cognito session and checks their subscription status and A/V quota in Turso.
     - It queries Turso to see if there is already an _active_ Chime `MeetingID` for this room.
     - **If no meeting exists:** It uses the AWS SDK to call Chime's `CreateMeeting` function. AWS returns a `Meeting` object, and the backend saves the new `MeetingId` in Turso, associated with the current room.
     - **The function then calls Chime's `CreateAttendee` function**, passing in the `MeetingId`. AWS returns an `Attendee` object containing a secret `JoinToken`.
-4.  **Client Receives Credentials:** The Edge Function returns the `Meeting` and `Attendee` objects to the client.
-5.  **Client Connects to SFU:** The client passes the received `Meeting` and `Attendee` objects to the **Amazon Chime JS SDK**. The SDK handles all the complex WebRTC logic, connecting the user to the AWS SFU and providing simple event handlers to manage video streams in the UI.
-6.  **Subsequent Users:** When other users join the call, the backend finds the existing `MeetingId` in Turso and simply creates a new `Attendee` for that meeting, ensuring everyone connects to the same SFU session.
+4. **Client Receives Credentials:** The Edge Function returns the `Meeting` and `Attendee` objects to the client.
+5. **Client Connects to SFU:** The client passes the received `Meeting` and `Attendee` objects to the **Amazon Chime JS SDK**. The SDK handles all the complex WebRTC logic, connecting the user to the AWS SFU and providing simple event handlers to manage video streams in the UI.
+6. **Subsequent Users:** When other users join the call, the backend finds the existing `MeetingId` in Turso and simply creates a new `Attendee` for that meeting, ensuring everyone connects to the same SFU session.
 
 ## VIII. Usage Tracking and Abuse Prevention
 
@@ -247,9 +247,9 @@ A critical component of this architecture is the ability to track usage for each
 
 - **Measurement Strategy:** Use **cost allocation tagging** and periodic reporting.
 - **Implementation:** This provides much more precise usage data.
-  1.  **Tagging:** When the Vercel backend calls the `CreateMeeting` function in the Chime SDK, it will add a unique tag to the meeting, such as `chitchatter-customer-id:<user_id_from_cognito>`.
-  2.  **Reporting:** In AWS, we will enable **Cost and Usage Reports (CUR)**. These reports are delivered to an S3 bucket and contain detailed line items of all AWS usage, including the tags we applied.
-  3.  **Processing:** An **AWS Lambda function** will be configured to trigger periodically (e.g., once every hour). This Lambda function will:
+  1. **Tagging:** When the Vercel backend calls the `CreateMeeting` function in the Chime SDK, it will add a unique tag to the meeting, such as `chitchatter-customer-id:<user_id_from_cognito>`.
+  2. **Reporting:** In AWS, we will enable **Cost and Usage Reports (CUR)**. These reports are delivered to an S3 bucket and contain detailed line items of all AWS usage, including the tags we applied.
+  3. **Processing:** An **AWS Lambda function** will be configured to trigger periodically (e.g., once every hour). This Lambda function will:
       - Read the latest CUR data from the S3 bucket.
       - Parse the data, looking for Chime usage line items.
       - Aggregate the total participant-minutes for each `chitchatter-customer-id` tag.
@@ -260,9 +260,9 @@ A critical component of this architecture is the ability to track usage for each
 
 - **Measurement Strategy:** Use **cost allocation tagging** and periodic reporting, identical to the Chime strategy.
 - **Implementation:**
-  1.  **Tagging:** When the Vercel backend generates a pre-signed URL for an S3 upload, it will ensure the subsequent `PUT` operation is tagged with the customer's ID (e.g., `chitchatter-customer-id:<user_id>`).
-  2.  **Reporting & Processing:** The same Lambda function that processes Chime usage will also look for S3 data storage and transfer line items, aggregating them by the customer ID tag.
-  3.  **Enforcement:** It will update a `storage_gb_used` field in Turso, allowing the backend to deny requests for new upload URLs if the customer has exceeded their storage quota.
+  1. **Tagging:** When the Vercel backend generates a pre-signed URL for an S3 upload, it will ensure the subsequent `PUT` operation is tagged with the customer's ID (e.g., `chitchatter-customer-id:<user_id>`).
+  2. **Reporting & Processing:** The same Lambda function that processes Chime usage will also look for S3 data storage and transfer line items, aggregating them by the customer ID tag.
+  3. **Enforcement:** It will update a `storage_gb_used` field in Turso, allowing the backend to deny requests for new upload URLs if the customer has exceeded their storage quota.
 
 ## IX. Post-MVP: Managed File Sharing via AWS S3
 
@@ -299,15 +299,15 @@ sequenceDiagram
 
 **Step-by-step Breakdown:**
 
-1.  **Client-Side Encryption:** The sender's browser encrypts the selected file using a symmetric key that has been securely shared among the room's participants (e.g., via the Trystero DataChannel). The server _never_ sees the unencrypted file.
-2.  **Request Upload URL:** The client makes an API call to the Vercel backend to request a secure location to upload the file.
-3.  **Backend Logic (Upload):** The backend validates the user's session and quota. If clear, it generates a **pre-signed S3 `PUT` URL** for a unique, randomly generated object key. This URL grants temporary, write-only permission for that specific key.
-4.  **Direct Upload:** The client uploads the encrypted file directly to S3 using the provided pre-signed URL.
-5.  **Share Key:** The sender transmits the S3 object key (not the whole URL) to the other participants through the existing E2EE DataChannel.
-6.  **Request Download URL:** A receiving participant's client takes the object key and makes an API call to the backend to request download access.
-7.  **Backend Logic (Download):** The backend generates a **pre-signed S3 `GET` URL** for the requested object key, granting temporary, read-only permission.
-8.  **Direct Download:** The client uses the pre-signed URL to download the encrypted file directly from S3.
-9.  **Client-Side Decryption:** The receiver decrypts the file using the same shared room key.
+1. **Client-Side Encryption:** The sender's browser encrypts the selected file using a symmetric key that has been securely shared among the room's participants (e.g., via the Trystero DataChannel). The server _never_ sees the unencrypted file.
+2. **Request Upload URL:** The client makes an API call to the Vercel backend to request a secure location to upload the file.
+3. **Backend Logic (Upload):** The backend validates the user's session and quota. If clear, it generates a **pre-signed S3 `PUT` URL** for a unique, randomly generated object key. This URL grants temporary, write-only permission for that specific key.
+4. **Direct Upload:** The client uploads the encrypted file directly to S3 using the provided pre-signed URL.
+5. **Share Key:** The sender transmits the S3 object key (not the whole URL) to the other participants through the existing E2EE DataChannel.
+6. **Request Download URL:** A receiving participant's client takes the object key and makes an API call to the backend to request download access.
+7. **Backend Logic (Download):** The backend generates a **pre-signed S3 `GET` URL** for the requested object key, granting temporary, read-only permission.
+8. **Direct Download:** The client uses the pre-signed URL to download the encrypted file directly from S3.
+9. **Client-Side Decryption:** The receiver decrypts the file using the same shared room key.
 
 ### Automatic Ephemeral Deletion
 
