@@ -1,0 +1,9 @@
+node_modules
+dist
+
+# This prevents the local development database (`prisma/dev.db`) from being
+# copied into the Docker image during the build process. This ensures that the
+# validation stack always starts with a fresh, empty database. This file does
+# not affect the data persistence of the development environment, which is
+# managed by a Docker volume.
+prisma/dev.db
