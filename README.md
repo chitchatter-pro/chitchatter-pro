@@ -4,6 +4,8 @@ This repository contains the source code for Chitchatter Pro.
 
 ## Development Prerequisites
 
+This project requires a \*NIX-based system for development (e.g., Linux, macOS). Windows users must use [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/install).
+
 Clone and install the project:
 
 ```bash
