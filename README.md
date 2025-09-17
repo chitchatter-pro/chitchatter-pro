@@ -93,24 +93,24 @@ For day-to-day development, you will need to create and apply database migration
    docker compose up
    ```
 
-2. Modify the `server/prisma/schema.prisma` file to reflect your desired schema changes.
+2. Modify the `prisma/schema.prisma` file to reflect your desired schema changes.
 
 3. Run the following command to generate a new migration file:
 
    ```bash
-   npm run db:migrate:create -- --name your-migration-name
+   npx prisma migrate dev --name your-migration-name
    ```
 
-   Replace `your-migration-name` with a descriptive name for your migration. This will create a new migration file in the `server/prisma/migrations` directory.
+   Replace `your-migration-name` with a descriptive name for your migration. This will create a new migration file in the `prisma/migrations` directory.
 
 #### Applying Migrations
 
 When you start the development environment with `docker compose up`, the `server` service runs a command by default that applies any pending migrations.
 
-If you pull down new changes from the repository that include new migrations, you can apply them to your running development database by running:
+If you pull down new changes from the repository that include new migrations, you can apply them to your running development database by running `npx prisma migrate dev`, which is also available as:
 
 ```bash
-npm run db:migrate:apply
+npm run db:migrate
 ```
 
 ## Deployment
