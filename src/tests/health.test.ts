@@ -1,20 +1,18 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 
 import handler from '../../api/health'
 
-// TODO: Implement this
-
 test('health check returns 200', () => {
   const req = {} as VercelRequest
   const res = {
-    status: (code: number) => ({
-      send: (body: { status: string }) => {
-        expect(code).toBe(200)
-        expect(body).toEqual({ status: 'ok' })
-      },
-    }),
-  } as VercelResponse
+    status: vi.fn().mockReturnThis(),
+    send: vi.fn(),
+  } as unknown as VercelResponse
+
   handler(req, res)
+
+  expect(res.status).toHaveBeenCalledWith(200)
+  expect(res.send).toHaveBeenCalledWith({ status: 'ok' })
 })
