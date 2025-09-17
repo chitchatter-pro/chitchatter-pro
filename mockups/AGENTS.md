@@ -24,12 +24,12 @@ The following principles are the foundation of our coding style.
 
 ```typescript
 // Good
-const newArray = [...oldArray, newItem];
-const newObject = { ...oldObject, newProperty: "value" };
+const newArray = [...oldArray, newItem]
+const newObject = { ...oldObject, newProperty: 'value' }
 
 // Bad
-oldArray.push(newItem);
-oldObject.newProperty = "value";
+oldArray.push(newItem)
+oldObject.newProperty = 'value'
 ```
 
 ### 2. Pure Functions

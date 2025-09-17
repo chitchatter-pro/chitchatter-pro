@@ -1,0 +1,17 @@
+{
+  /* Visit https://firebase.google.com/docs/database/security to learn more about security rules. */
+
+  /* Taken from: https://github.com/dmotz/trystero?tab=readme-ov-file#firebase-setup */
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "__trystero__": {
+      ".read": false,
+      ".write": false,
+      "$room_id": {
+        ".read": true,
+        ".write": true
+      }
+    }
+  }
+}

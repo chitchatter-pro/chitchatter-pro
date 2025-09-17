@@ -1,0 +1,52 @@
+services:
+  db:
+    image: ghcr.io/tursodatabase/libsql-server:latest
+    ports:
+      - 8080:8080
+    volumes:
+      - chitchatter-pro-db-data:/var/lib/sqld
+
+  server:
+    command: >
+      sh -c "
+        npm run db:migrate &&
+        npm run start:app -- --token=$VERCEL_TOKEN
+      "
+    build: .
+    ports:
+      - 3000:3000
+    volumes:
+      - ./api:/app/api
+      - ./src:/app/src
+      - ./public/:/app/public/
+    depends_on:
+      - db
+
+  firebase:
+    image: evolutecx/firebase-emulator
+    ports:
+      - 4000:4000
+      - 9000:9000
+    environment:
+      - FB_PROJECT_ID=$FB_PROJECT_ID
+    volumes:
+      - ./database.rules.json:/firebase/database.rules.json
+      - ./firebase.json:/firebase/firebase.json
+
+  turn:
+    image: coturn/coturn
+    ports:
+      - 3478:3478
+      - 3478:3478/udp
+
+  cognito:
+    image: jagregory/cognito-local
+    ports:
+      - 9229:9229
+
+  stripe:
+    image: stripe/stripe-cli
+    command: 'listen --forward-to host.docker.internal:3000/api/stripe-webhook'
+
+volumes:
+  chitchatter-pro-db-data:
