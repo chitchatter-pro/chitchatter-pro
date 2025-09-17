@@ -46,7 +46,7 @@ services:
 
   stripe:
     image: stripe/stripe-cli
-    command: 'listen --forward-to host.docker.internal:3000/webhooks/stripe'
+    command: 'listen --forward-to host.docker.internal:3000/api/stripe-webhook'
 
 volumes:
   chitchatter-pro-db-data:
